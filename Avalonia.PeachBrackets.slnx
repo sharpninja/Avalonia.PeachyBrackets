@@ -5,4 +5,7 @@
   <Folder Name="/src/">
     <Project Path="src/Avalonia.PeachBrackets/Avalonia.PeachBrackets.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Avalonia.PeachBrackets.Tests/Avalonia.PeachBrackets.Tests.csproj" />
+  </Folder>
 </Solution>
