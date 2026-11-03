@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/Avalonia.PeachBrackets.Demo/Avalonia.PeachBrackets.Demo.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Avalonia.PeachBrackets/Avalonia.PeachBrackets.csproj" />
+  </Folder>
+</Solution>
