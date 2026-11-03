@@ -30,3 +30,15 @@
 - API notes found while building (see README "API notes"): `RasterRenderContext` is sealed and its `LayoutUnitsPerPoint` and
   `BaseUri` are get-only; `CreateCanvas` is fixed at 1 unit = 1 px, so HiDPI uses `new RasterSurface(...)` + `new RasterCanvas(ctx, surface, 1.0)`;
   `RasterRenderContext` does not override `GetResourceStream`, so `<img>` (even `data:` URIs), `<link>` stylesheets and `@font-face url()` don't load.
+
+## Step 4 - Demo window (done)
+- `samples/Avalonia.PeachBrackets.Demo`: toolbar (page size A4/Letter/A5/A4 landscape, margin in pt, page number + count,
+  render status), live HTML editor on the left, `HtmlView` on a grey "desk" on the right. The view starts from
+  `Source="avares://Avalonia.PeachBrackets.Demo/Assets/sample.html"`; typing in the editor sets `Html` (which wins over `Source`).
+- Sample covers headings, a styled paragraph, inline-block tags, a zebra table, inline SVG (gradient, shapes, path, text),
+  CSS colours (hex/rgb/hsl/gradient), MathML and a list.
+- MathML rendered as tofu until a math font was registered: the demo ships Noto Sans Math (OFL 1.1) and registers it via
+  `PeachHtmlRenderer.Shared.RegisterFontAsync`.
+- Verified: `dotnet run --project samples/Avalonia.PeachBrackets.Demo -- --screenshot docs` (Avalonia.Headless + Skia) wrote
+  `docs/demo-screenshot.png` (1400x960 window) and `docs/demo-page.png` (raw 794x1123 page bitmap at 96 DPI). The normal
+  desktop (X11) path was also run under Xvfb: `docs/demo-xvfb-desktop.png`. First render ~1.1 s (includes font-set setup).

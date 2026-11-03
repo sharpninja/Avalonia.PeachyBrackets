@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PeachBrackets in Avalonia</title>
+  <style>
+    body { font-family: sans-serif; color: #222; font-size: 11pt; line-height: 1.4; }
+    h1 { color: #c0392b; margin: 0 0 4pt 0; font-size: 22pt; }
+    h2 { color: #2c3e50; border-bottom: 2px solid #e67e22; padding-bottom: 2pt; font-size: 14pt; }
+    .lead { background: #fde8c8; border-left: 4pt solid #e67e22; padding: 6pt 8pt; }
+    .tag { display: inline-block; background: #16a085; color: white; border-radius: 4pt; padding: 1pt 5pt; font-size: 9pt; }
+    table { border-collapse: collapse; width: 100%; margin-top: 4pt; }
+    th { background: #34495e; color: white; text-align: left; }
+    th, td { border: 1px solid #bdc3c7; padding: 3pt 6pt; }
+    tr:nth-child(even) td { background: #ecf0f1; }
+    .row { display: flex; gap: 12pt; align-items: center; }
+    .note { color: #7f8c8d; font-style: italic; }
+    code { font-family: monospace; }
+    /* Registered by the demo app (PeachHtmlRenderer.RegisterFontAsync); not installed on most systems. */
+    math { font-family: 'Noto Sans Math'; font-size: 12pt; }
+  </style>
+</head>
+<body>
+  <h1>Hello from PeachBrackets</h1>
+  <p class="lead">This page was laid out and painted by the <b>pure-.NET</b> PeachBrackets engine, rasterized on the CPU by
+     PeachDrawing, and shown in an Avalonia <code>HtmlView</code>. <span class="tag">HTML</span> <span class="tag">CSS</span>
+     <span class="tag">SVG</span> <span class="tag">MathML</span></p>
+
+  <h2>A table</h2>
+  <table>
+    <tr><th>Stage</th><th>API</th><th>Thread</th></tr>
+    <tr><td>Parse + cascade</td><td>HtmlDocument.LoadAsync</td><td>thread pool</td></tr>
+    <tr><td>Paginate</td><td>LayoutAsync</td><td>thread pool</td></tr>
+    <tr><td>Paint</td><td>PaintPageAsync &rarr; RasterCanvas</td><td>thread pool</td></tr>
+    <tr><td>Display</td><td>WriteableBitmap &rarr; DrawingContext</td><td>UI</td></tr>
+  </table>
+
+  <h2>Inline SVG</h2>
+  <div class="row">
+    <svg width="220" height="110" viewBox="0 0 220 110">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#f39c12"/><stop offset="1" stop-color="#e74c3c"/>
+        </linearGradient>
+      </defs>
+      <rect x="5" y="5" width="100" height="100" rx="14" fill="url(#g)"/>
+      <circle cx="160" cy="55" r="45" fill="#2980b9" stroke="#1b4f72" stroke-width="4"/>
+      <path d="M140 55 l15 15 l25 -30" fill="none" stroke="white" stroke-width="7" stroke-linecap="round"/>
+      <text x="55" y="62" text-anchor="middle" font-size="20" fill="white" font-family="sans-serif">SVG</text>
+    </svg>
+    <p>Colors: <span style="color: #c0392b">red</span>, <span style="color: rgb(39,174,96)">green</span>,
+       <span style="color: hsl(210, 70%, 45%)">blue</span>, and
+       <span style="background: linear-gradient(90deg, #8e44ad, #3498db); color: white; padding: 0 4pt">a gradient</span>.</p>
+  </div>
+
+  <h2>MathML</h2>
+  <p>The quadratic formula:
+    <math display="inline"><mi>x</mi><mo>=</mo><mfrac><mrow><mo>&minus;</mo><mi>b</mi><mo>&plusmn;</mo>
+    <msqrt><msup><mi>b</mi><mn>2</mn></msup><mo>&minus;</mo><mn>4</mn><mi>a</mi><mi>c</mi></msqrt></mrow>
+    <mrow><mn>2</mn><mi>a</mi></mrow></mfrac></math></p>
+
+  <h2>Lists</h2>
+  <ul>
+    <li>Page-oriented: the document is paginated like print.</li>
+    <li>Change the page size or margins on the left and the page re-renders.</li>
+  </ul>
+  <p class="note">Edit the HTML in the left pane to re-render live.</p>
+</body>
+</html>

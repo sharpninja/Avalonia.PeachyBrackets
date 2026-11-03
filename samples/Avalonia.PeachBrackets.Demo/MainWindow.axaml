@@ -1,0 +1,43 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:pb="clr-namespace:Avalonia.PeachBrackets;assembly=Avalonia.PeachBrackets"
+        x:Class="Avalonia.PeachBrackets.Demo.MainWindow"
+        Title="Avalonia.PeachBrackets demo" Width="1400" Height="960">
+  <DockPanel>
+    <!-- Page options -->
+    <Border DockPanel.Dock="Top" Background="#F3F3F3" BorderBrush="#DDD" BorderThickness="0,0,0,1" Padding="10,6">
+      <StackPanel Orientation="Horizontal" Spacing="14">
+        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <TextBlock Text="Page" VerticalAlignment="Center" />
+          <ComboBox x:Name="PageSizeBox" Width="140" SelectedIndex="0">
+            <ComboBoxItem Content="A4 (595x842)" />
+            <ComboBoxItem Content="Letter (612x792)" />
+            <ComboBoxItem Content="A5 (420x595)" />
+            <ComboBoxItem Content="A4 landscape" />
+          </ComboBox>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <TextBlock Text="Margin (pt)" VerticalAlignment="Center" />
+          <NumericUpDown x:Name="MarginBox" Width="120" Minimum="0" Maximum="144" Increment="4" Value="36" FormatString="0" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <TextBlock Text="Page #" VerticalAlignment="Center" />
+          <NumericUpDown x:Name="PageBox" Width="110" Minimum="1" Maximum="9999" Increment="1" Value="1" FormatString="0" />
+          <TextBlock x:Name="PageCountText" Text="of ?" VerticalAlignment="Center" />
+        </StackPanel>
+        <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="#555" />
+      </StackPanel>
+    </Border>
+
+    <Grid ColumnDefinitions="420,4,*">
+      <TextBox x:Name="HtmlEditor" Grid.Column="0" AcceptsReturn="True" AcceptsTab="True" TextWrapping="NoWrap"
+               FontFamily="monospace" FontSize="12" />
+      <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="#DDD" />
+      <ScrollViewer Grid.Column="2" Background="#7F8C8D" HorizontalScrollBarVisibility="Auto">
+        <Border Margin="24" HorizontalAlignment="Center" VerticalAlignment="Top" BoxShadow="0 2 10 0 #66000000">
+          <pb:HtmlView x:Name="View" Source="avares://Avalonia.PeachBrackets.Demo/Assets/sample.html" />
+        </Border>
+      </ScrollViewer>
+    </Grid>
+  </DockPanel>
+</Window>
