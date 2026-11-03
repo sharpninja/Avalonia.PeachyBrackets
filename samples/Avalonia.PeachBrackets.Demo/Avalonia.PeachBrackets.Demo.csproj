@@ -6,4 +6,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Avalonia.PeachBrackets\Avalonia.PeachBrackets.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="Avalonia.Headless" />
+    <PackageReference Include="Avalonia.Skia" />
+  </ItemGroup>
 </Project>

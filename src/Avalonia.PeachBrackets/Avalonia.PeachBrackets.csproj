@@ -11,4 +11,10 @@
     <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
     <Version>0.1.0-alpha</Version>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="PeachBrackets" />
+    <PackageReference Include="PeachDrawing" />
+    <PackageReference Include="PeachDrawing.Core" />
+  </ItemGroup>
 </Project>

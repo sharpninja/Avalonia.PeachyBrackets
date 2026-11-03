@@ -1,7 +1,26 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Exact pins. PeachBrackets/PeachDrawing are pre-1.0 and versioned in lockstep: bump them together. -->
+    <PeachVersion>[0.9.25]</PeachVersion>
+    <AvaloniaVersion>[12.1.5]</AvaloniaVersion>
   </PropertyGroup>
   <ItemGroup>
+    <!-- HTML engine + software rasterizer -->
+    <PackageVersion Include="PeachBrackets" Version="$(PeachVersion)" />
+    <PackageVersion Include="PeachDrawing" Version="$(PeachVersion)" />
+    <PackageVersion Include="PeachDrawing.Core" Version="$(PeachVersion)" />
+    <!-- Avalonia 12 -->
+    <PackageVersion Include="Avalonia" Version="$(AvaloniaVersion)" />
+    <PackageVersion Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="$(AvaloniaVersion)" />
+    <PackageVersion Include="Avalonia.Headless" Version="$(AvaloniaVersion)" />
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="$(AvaloniaVersion)" />
+    <PackageVersion Include="Avalonia.Skia" Version="$(AvaloniaVersion)" />
+    <!-- Tests -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="[18.11.0]" />
+    <PackageVersion Include="xunit.v3" Version="[3.2.2]" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="[3.1.5]" />
   </ItemGroup>
 </Project>
