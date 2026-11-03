@@ -42,3 +42,11 @@
 - Verified: `dotnet run --project samples/Avalonia.PeachBrackets.Demo -- --screenshot docs` (Avalonia.Headless + Skia) wrote
   `docs/demo-screenshot.png` (1400x960 window) and `docs/demo-page.png` (raw 794x1123 page bitmap at 96 DPI). The normal
   desktop (X11) path was also run under Xvfb: `docs/demo-xvfb-desktop.png`. First render ~1.1 s (includes font-set setup).
+
+## Step 5 - Documentation (done)
+- `README.md`: layout, pinned versions, build/test/run, usage, public surface, pipeline, API notes and mismatches,
+  known limitations, next steps.
+- Package licence expression removed from the library csproj on purpose; the project licence is still to be chosen.
+
+## Step 6 - Git (done)
+- Local repo on branch `main`, one commit per step. No remote is configured and nothing was pushed.
