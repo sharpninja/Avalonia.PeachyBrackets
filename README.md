@@ -25,12 +25,13 @@ docs/                          progress log, screenshots
 
 | Package | Version |
 | --- | --- |
-| PeachBrackets, PeachDrawing, PeachDrawing.Core | `[0.9.25]` (exact; pre-1.0, versioned in lockstep, bump together) |
+| PeachBrackets, PeachDrawing, PeachDrawing.Core | `[0.9.26]` (exact; pre-1.0, versioned in lockstep, bump together; latest on nuget.org as of 2026-11-11) |
 | Avalonia, Avalonia.Desktop, Avalonia.Themes.Fluent, Avalonia.Fonts.Inter, Avalonia.Skia, Avalonia.Headless, Avalonia.Headless.XUnit | `[12.1.5]` |
 | Microsoft.NET.Test.Sdk / xunit.v3 / xunit.runner.visualstudio | `[18.11.0]` / `[3.2.2]` / `[3.1.5]` |
 
-PeachBrackets 0.9.25 pulls in PeachDrawing.Text 0.9.25, PeachImage 0.6.2, MimeKit 4.18.2 and
-System.Security.Cryptography.Pkcs 10.0.14 transitively.
+PeachBrackets 0.9.26 pulls in PeachDrawing.Text / PeachDrawing.Text.Data 0.9.26, PeachImage 0.7.3, MimeKit 4.18.2,
+BouncyCastle.Cryptography 2.7.0 and System.Security.Cryptography.Pkcs 10.0.14 transitively. (Upstream `main` has unreleased
+commits past the `v0.9.26` tag; we stay on the published package.)
 
 ## Build, test, run
 
@@ -64,6 +65,10 @@ view.RenderCompleted += (_, e) => Console.WriteLine(e.Error?.Message ?? $"{e.Pag
 // Fonts that are not installed (and every font on WASM) must be registered before rendering:
 await PeachHtmlRenderer.Shared.RegisterFontAsync(File.OpenRead("NotoSansMath-Regular.ttf"), "Noto Sans Math");
 
+// Images / style sheets / fonts the document refers to: data:, file: and avares: load by default; http(s) is opt-in.
+view.BaseUri = new Uri("file:///home/me/site/");   // relative src/href resolve here (Source is used when BaseUri is null)
+view.AllowNetwork = true;                           // let the document fetch http(s) resources
+
 // Without a control: render a page to pixels or a PNG.
 var page = await PeachHtmlRenderer.Shared.RenderPageAsync(html, HtmlPageSettings.A4, pageIndex: 0, pixelsPerPoint: 2);
 await PeachHtmlRenderer.Shared.RenderPageToPngAsync(html, HtmlPageSettings.Letter, File.Create("page1.png"));
@@ -85,6 +90,10 @@ All lengths are **points** (1/72 inch), as in PeachBrackets. On screen 1 pt = 96
 | `RenderScale` | `StyledProperty<double>` | 0 (default) = the window's `RenderScaling`, so HiDPI stays sharp; otherwise pixels per DIP. |
 | `PageBackground` | `StyledProperty<IBrush?>` | Painted behind the page (default white); PeachBrackets leaves unpainted pixels transparent. |
 | `UserStyleSheet` | `StyledProperty<string?>` | CSS applied before the document's own styles. |
+| `BaseUri` | `StyledProperty<Uri?>` | Base for relative `src`/`href`/`url()` when the document has no `<base href>`. Null + `Source` set = `Source`. |
+| `AllowNetwork` | `StyledProperty<bool>` | Opt-in (default false): fetch `http(s)` images, style sheets and fonts. Does not affect loading `Source` itself. |
+| `AllowLocalFiles` | `StyledProperty<bool>` | Read `file:` references (default true). `data:` and `avares:` always load. |
+| `MediaType` | `StyledProperty<MediaType>` | PeachBrackets `MediaType.Print` (default, paginated) or `MediaType.Screen` (one continuous page of `PageWidth`, `@media screen`). |
 | `PageCount`, `IsRendering`, `RenderError`, `DocumentTitle` | read-only `DirectProperty` | State of the last render. |
 | `CurrentBitmap` | `Bitmap?` | The page bitmap being shown. |
 | `Renderer` | `PeachHtmlRenderer` | Defaults to `PeachHtmlRenderer.Shared`. |
@@ -102,8 +111,15 @@ registered when it is created) and serializes renders, because PeachBrackets doc
 context is shared.
 
 - `static Shared`, `Context`, `RegisterFontAsync(Stream, family)`
-- `RenderPageAsync(html, HtmlPageSettings, pageIndex, pixelsPerPoint, userStyleSheet, ct)` -> `RenderedHtmlPage`
+- `RenderPageAsync(html, HtmlPageSettings, pageIndex, pixelsPerPoint, userStyleSheet, ct, HtmlResourceOptions? resources, MediaType media)` -> `RenderedHtmlPage`
 - `RenderPageToPngAsync(html, HtmlPageSettings, Stream, ...)`
+
+### `HtmlResourceOptions`
+
+`record HtmlResourceOptions(Uri? BaseUri, bool AllowNetwork = false, bool AllowLocalFiles = true, bool AllowAvaloniaResources = true)`,
+with `Default` (data:, file:, avares:; no network) and `DataOnly`. The renderer sets `RasterRenderContext.ResourceLoader` for each
+render: relative addresses are resolved against `BaseUri`, `avares:` goes through `AssetLoader`, and everything else goes through
+PeachBrackets' `HostResourceLoader.LoadAsync(uri, allowNetwork, allowLocalFiles)`.
 
 ### `HtmlPageSettings`, `RenderedHtmlPage`, `HtmlRenderCompletedEventArgs`
 
@@ -114,41 +130,50 @@ and `WithUniformMargin`. `RenderedHtmlPage` holds `PageIndex`, `PageCount`, `Wid
 ## How it works
 
 ```
-HtmlDocument.LoadAsync(html, RasterRenderContext, HtmlDocumentOptions{page size, margins, Media="screen"})
+ctx.ResourceLoader = uri => (avares: ? AssetLoader : HostResourceLoader.LoadAsync(uri, allowNetwork, allowLocalFiles))
+HtmlDocument.LoadAsync(html', RasterRenderContext, HtmlDocumentOptions{page size, margins, MediaType, DevicePixelRatio})
+                                                    // html' = <link href> made absolute, <base href> injected (see note 2)
   -> LayoutAsync(ctx.CreateCanvas(1, 1))            // measuring only
   -> PaintPageAsync(i, new RasterCanvas(ctx, new RasterSurface(wPx, hPx, 0, 0, ppp, ppp), 1.0))
   -> RasterCanvas.ToPixelBuffer()                   // premultiplied RGBA8, copied out
   -> WriteableBitmap(Rgba8888, Premul, dpi = 72 * ppp) -> DrawingContext.DrawImage
 ```
 
-## API notes and mismatches found (PeachBrackets / PeachDrawing 0.9.25)
+## API notes and blockers (PeachBrackets / PeachDrawing 0.9.26)
 
 The pipeline names matched: `HtmlDocument.LoadAsync`, `LayoutAsync`, `PaintPageAsync`, `Pages` (`DocumentPage` with
-`Index`, `WidthPoints`, `HeightPoints`), `RasterRenderContext`, `RasterCanvas`, `ToPixelBuffer`. These differed from what
-was expected:
+`Index`, `WidthPoints`, `HeightPoints`), `RasterRenderContext`, `RasterCanvas`, `ToPixelBuffer`.
 
-1. **HiDPI scaling.** The docs say "set `RenderContext.LayoutUnitsPerPoint` before loading", but `RasterRenderContext` is
-   `sealed` and the property is get-only (always 1). `RasterRenderContext.CreateCanvas(w, h, dpi)` is fixed at 1 unit = 1 px
-   (`dpi` is ignored). **Workaround:** keep layout in points and paint onto
-   `new RasterCanvas(ctx, new RasterSurface(wPx, hPx, 0, 0, scale, scale), 1.0)`. Verified at 2x and 1.33x.
-2. **No resource loading.** `RasterRenderContext` doesn't override `RenderContext.GetResourceStream`, so the base
-   implementation returns null for every URI. `<img>` (including `data:` URIs, which also go through the network loader),
-   `<link rel=stylesheet>`, CSS `url()` and `@font-face src:url()` load nothing. `BaseUri` is get-only, so relative URLs can't
-   be resolved either. Inline `<svg>`, inline `<style>` and CSS gradients work. **Fix options:** ask upstream to unseal
-   `RasterRenderContext` or give it a resource-loader hook or base URI, or write our own `RenderContext` subclass (the font and
-   image `*Int` members are `protected abstract`, so this means reimplementing font handling; not a quick job).
+**API change hit going 0.9.25 -> 0.9.26:** `HtmlDocumentOptions.Media` (string) was replaced by `MediaType MediaType`
+(`Print`/`Screen`), and `Screen` now also means "one continuous surface, no pages". The renderer defaults to `Print` (paginated,
+as before) and exposes `MediaType`. Other 0.9.26 changes (`Task` -> `ValueTask` on `RenderContext` font/resource methods,
+`AddFont` returning `ValueTask`) needed no code changes.
+
+1. **HiDPI scaling (still open, workaround kept).** `RasterRenderContext` is `sealed`, `LayoutUnitsPerPoint` is get-only (1),
+   and `CreateCanvas(w, h, dpi)` still ignores `dpi`. **Workaround:** keep layout in points and paint onto
+   `new RasterCanvas(ctx, new RasterSurface(wPx, hPx, 0, 0, scale, scale), 1.0)`. 0.9.26's `HtmlDocumentOptions.DevicePixelRatio`
+   is now set too, so `resolution` media queries and `srcset` see the real density.
+2. **Resource loading (fixed in 0.9.26, with two workarounds).** `RasterRenderContext.ResourceLoader` (new) plus the public
+   `HostResourceLoader` now load `<img>` (incl. `data:`), `<link rel=stylesheet>`, CSS `url()` and `@font-face`. We wire them up
+   with `HtmlResourceOptions` / `AllowNetwork`. Remaining engine gaps we work around:
+   - `RasterRenderContext.BaseUri` is still always null and `<link>` sheets load before `<base href>` is seen; a relative `<link href>`
+     then throws "This operation is not supported for a relative URI" and fails the whole render. `HtmlBaseUriRewriter` makes
+     `<link href>` absolute (or an empty `data:text/css,` sheet when there is no base) and injects `<base href>` so images and CSS
+     `url()` resolve during layout.
+   - `HostResourceLoader` serves `file:` with no `Content-Type`, but the engine only accepts a style sheet whose type is `text/css`;
+     we add a `Content-Type` by file extension (also for `avares:`).
+   - Still unresolved: relative `@font-face src: url(...)` / `@import` inside an inline `<style>` (no base for the sheet); use absolute or
+     `data:` URLs there.
 3. **Transparent page.** Unpainted pixels are alpha 0. `HtmlView.PageBackground` (white) is painted underneath.
-4. **No cancellation inside the engine.** `LoadAsync`, `LayoutAsync` and `PaintPageAsync` take no `CancellationToken`.
-   Stale renders are cancelled between stages and their results thrown away.
-5. **Media defaults to `print`.** The view sets `HtmlDocumentOptions.Media = "screen"` (RasterRenderContext's
-   `GetCssMediaType` also answers `screen`).
-6. **Inline MathML baseline.** The inline `<math>` in the sample sits above the text baseline. This is engine behaviour,
+4. **No cancellation inside the engine (still open).** `LoadAsync`, `LayoutAsync` and `PaintPageAsync` still take no
+   `CancellationToken`. Stale renders are cancelled between stages and on each resource request, and their results thrown away.
+5. **Inline MathML baseline.** The inline `<math>` in the sample sits above the text baseline. This is engine behaviour,
    not something the control does.
 
 ## Known limitations
 
-- **Page-oriented engine.** PeachBrackets paginates like print. The view shows one page at a time at a fixed sheet size;
-  there's no continuous "web page" flow and the layout doesn't reflow to the control's width.
+- **Page-oriented by default.** With `MediaType.Print` the view shows one page at a time at a fixed sheet size.
+  `MediaType.Screen` gives one continuous page of `PageWidth`, but the view doesn't yet reflow to the control's width.
 - **Pre-1.0 API.** PeachBrackets/PeachDrawing 0.9.x may change between releases, so the pins are exact. Expect
   adjustments on every bump.
 - **Software rasterizer.** Pages are painted on the CPU and uploaded as a bitmap. Every change re-runs load, layout and
@@ -157,7 +182,8 @@ was expected:
 - **Fonts.** `RasterRenderContext` registers the machine's installed fonts (about 160 ms at startup on the dev box). WASM,
   minimal containers and fonts shipped as assets need `RegisterFontAsync`. MathML needs a math font (the demo bundles
   Noto Sans Math, OFL). Without one, math identifiers render as tofu boxes.
-- **No external resources** (see API note 2).
+- **External resources** load (see API note 2); network is opt-in per view (`AllowNetwork`). `HostResourceLoader`
+  keeps a process-wide HTTP cache and user agent.
 - **No interaction yet.** No selection, links, hover, forms or scrolling between pages.
 - **One shared context.** Renders on a renderer are serialized. Create separate `PeachHtmlRenderer` instances for parallel
   rendering; each one costs a font-set scan.
@@ -174,8 +200,8 @@ was expected:
    `PaintPageRegionAsync`, and copy with `GetText`. Add find (`FindText`, `SetHighlight`).
 4. **Links.** Use `Annotations.Links` for hover cursors and a `LinkClicked` event or command; navigate in-document anchors
    via `Destination`.
-5. **Resource loading.** Work with upstream on a pluggable resource loader or base URI for the raster context, so
-   images and external CSS load. Map `avares:`, `file:` and `http:` through it.
+5. **Resource loading upstream fixes.** Ask upstream for a settable base URI on `RasterRenderContext` (or `HtmlDocumentOptions`),
+   for `<link>` resolution that honours `<base>`, and for a `Content-Type` on `file:` responses, then drop `HtmlBaseUriRewriter`.
 6. **Custom Canvas -> DrawingContext.** Implement `PeachDrawing.Core.Canvas` over Avalonia's `DrawingContext` (or a
    Skia-backed one) for GPU, resolution-independent painting. This needs a full mapping of brushes, paths, clips, blend
    modes, glyph runs and layers. Keep the raster path as the fallback.

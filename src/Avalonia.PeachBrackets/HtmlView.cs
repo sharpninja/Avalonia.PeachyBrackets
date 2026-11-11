@@ -3,6 +3,7 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using PeachBrackets;
 
 namespace Avalonia.PeachBrackets;
 
@@ -65,6 +66,31 @@ public class HtmlView : Control
     /// <summary>Optional CSS applied before the document's own style sheets.</summary>
     public static readonly StyledProperty<string?> UserStyleSheetProperty =
         AvaloniaProperty.Register<HtmlView, string?>(nameof(UserStyleSheet));
+
+    /// <summary>
+    /// Address relative references (<c>&lt;img src&gt;</c>, <c>&lt;link href&gt;</c>, CSS <c>url()</c>) resolve against when the document has
+    /// no <c>&lt;base href&gt;</c>. When null and the document came from <see cref="Source"/>, <see cref="Source"/> is used.
+    /// </summary>
+    public static readonly StyledProperty<Uri?> BaseUriProperty =
+        AvaloniaProperty.Register<HtmlView, Uri?>(nameof(BaseUri));
+
+    /// <summary>
+    /// Opt-in: let the document fetch <c>http</c>/<c>https</c> images, style sheets and fonts. Off by default so displaying a document
+    /// never makes the app call out. (Loading <see cref="Source"/> itself over http(s) is the app's explicit choice and is not affected.)
+    /// </summary>
+    public static readonly StyledProperty<bool> AllowNetworkProperty =
+        AvaloniaProperty.Register<HtmlView, bool>(nameof(AllowNetwork));
+
+    /// <summary>Let the document read <c>file:</c> references (default true). <c>data:</c> and <c>avares:</c> always load.</summary>
+    public static readonly StyledProperty<bool> AllowLocalFilesProperty =
+        AvaloniaProperty.Register<HtmlView, bool>(nameof(AllowLocalFiles), true);
+
+    /// <summary>
+    /// <see cref="MediaType.Print"/> (default) paginates onto the sheet; <see cref="MediaType.Screen"/> lays the document out as one
+    /// continuous page of <see cref="PageWidth"/> and applies <c>@media screen</c>.
+    /// </summary>
+    public static readonly StyledProperty<MediaType> MediaTypeProperty =
+        AvaloniaProperty.Register<HtmlView, MediaType>(nameof(MediaType), MediaType.Print);
 
     /// <summary>Number of pages the current document was laid out into (0 until the first render completes).</summary>
     public static readonly DirectProperty<HtmlView, int> PageCountProperty =
@@ -137,6 +163,18 @@ public class HtmlView : Control
     /// <inheritdoc cref="UserStyleSheetProperty"/>
     public string? UserStyleSheet { get => GetValue(UserStyleSheetProperty); set => SetValue(UserStyleSheetProperty, value); }
 
+    /// <inheritdoc cref="BaseUriProperty"/>
+    public Uri? BaseUri { get => GetValue(BaseUriProperty); set => SetValue(BaseUriProperty, value); }
+
+    /// <inheritdoc cref="AllowNetworkProperty"/>
+    public bool AllowNetwork { get => GetValue(AllowNetworkProperty); set => SetValue(AllowNetworkProperty, value); }
+
+    /// <inheritdoc cref="AllowLocalFilesProperty"/>
+    public bool AllowLocalFiles { get => GetValue(AllowLocalFilesProperty); set => SetValue(AllowLocalFilesProperty, value); }
+
+    /// <inheritdoc cref="MediaTypeProperty"/>
+    public MediaType MediaType { get => GetValue(MediaTypeProperty); set => SetValue(MediaTypeProperty, value); }
+
     /// <inheritdoc cref="PageCountProperty"/>
     public int PageCount { get => _pageCount; private set => SetAndRaise(PageCountProperty, ref _pageCount, value); }
 
@@ -168,7 +206,8 @@ public class HtmlView : Control
         base.OnPropertyChanged(change);
         var p = change.Property;
         if (p == HtmlProperty || p == SourceProperty || p == PageWidthProperty || p == PageHeightProperty ||
-            p == PageMarginProperty || p == PageIndexProperty || p == RenderScaleProperty || p == UserStyleSheetProperty)
+            p == PageMarginProperty || p == PageIndexProperty || p == RenderScaleProperty || p == UserStyleSheetProperty ||
+            p == BaseUriProperty || p == AllowNetworkProperty || p == AllowLocalFilesProperty || p == MediaTypeProperty)
         {
             QueueRender();
         }
@@ -259,13 +298,18 @@ public class HtmlView : Control
         var userCss = UserStyleSheet;
         var index = PageIndex;
         var renderer = Renderer;
+        var media = MediaType;
+        var resources = new HtmlResourceOptions(
+            BaseUri ?? (html is null ? source : null),
+            AllowNetwork,
+            AllowLocalFiles);
 
         RenderedHtmlPage? result = null;
         Exception? error = null;
         try
         {
             html ??= await LoadSourceAsync(source!, ct).ConfigureAwait(true);
-            result = await renderer.RenderPageAsync(html, page, index, pixelsPerPoint, userCss, ct).ConfigureAwait(true);
+            result = await renderer.RenderPageAsync(html, page, index, pixelsPerPoint, userCss, ct, resources, media).ConfigureAwait(true);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {

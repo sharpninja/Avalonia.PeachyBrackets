@@ -49,4 +49,24 @@
 - Package licence expression removed from the library csproj on purpose; the project licence is still to be chosen.
 
 ## Step 6 - Git (done)
-- Local repo on branch `main`, one commit per step. No remote is configured and nothing was pushed.
+- Local repo on branch `main`, one commit per step. (Later pushed to `origin` = github.com/sharpninja/Avalonia.PeachyBrackets.)
+
+# Upstream sync - PeachBrackets 0.9.26 (2026-11-11)
+
+- nuget.org flat container: PeachBrackets, PeachDrawing and PeachDrawing.Core all list `0.9.26` as the latest. Pinned `[0.9.26]`.
+  Upstream `main` has ~31 commits past the `v0.9.26` tag (Version.props still says 0.9.26, unreleased); not referenced.
+- `PublicApi.txt` doesn't exist at `v0.9.25`, so the diff was done on the sources (`RenderContext`, `RasterRenderContext`,
+  `HtmlDocumentOptions`) between the tags.
+- **Break fixed:** `HtmlDocumentOptions.Media` (string) -> `MediaType MediaType` enum; `Screen` now means continuous (no pages).
+  Renderer defaults to `Print` and exposes `MediaType` (also as `HtmlView.MediaType`). `DevicePixelRatio` is now set.
+- **Blocker (a) resources: fixed.** New `RasterRenderContext.ResourceLoader` + public `HostResourceLoader`. Added
+  `HtmlResourceOptions` and `HtmlView.BaseUri` / `AllowNetwork` (opt-in) / `AllowLocalFiles`; `avares:` via `AssetLoader`.
+  Workarounds for remaining engine gaps: `HtmlBaseUriRewriter` (relative `<link href>` otherwise throws, since
+  `RasterRenderContext.BaseUri` is still null) and a `Content-Type` by extension for `file:`/`avares:` (CSS needs `text/css`).
+  `IResourcePrefetcher` is only for render contexts that batch-fetch; not needed here.
+- **Blocker (b) HiDPI: still open**, scaled `RasterSurface` workaround kept.
+- **Blocker (c) cancellation: still open**, no tokens on `LoadAsync`/`LayoutAsync`/`PaintPageAsync`.
+- Demo sample has a new "Images" section with a PNG and an SVG `data:` URI `<img>`; both render (`docs/demo-screenshot.png`,
+  `docs/demo-page.png`).
+- Tests: 11/11 pass (new `ResourceLoadingTests`: data: image, relative file image + linked sheet via `BaseUri`, `AllowLocalFiles=false`
+  blocks them, relative `<link>` with no base doesn't fail, network off by default, `MediaType.Screen` is one tall page).

@@ -2,7 +2,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <!-- Exact pins. PeachBrackets/PeachDrawing are pre-1.0 and versioned in lockstep: bump them together. -->
-    <PeachVersion>[0.9.25]</PeachVersion>
+    <PeachVersion>[0.9.26]</PeachVersion>
     <AvaloniaVersion>[12.1.5]</AvaloniaVersion>
   </PropertyGroup>
   <ItemGroup>
